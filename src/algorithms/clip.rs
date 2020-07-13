@@ -1,7 +1,7 @@
-use crate::seg_rtree::min_heap::MinHeap;
-use crate::seg_rtree::segment_union::SegmentUnion;
-use crate::seg_rtree::SegRTree;
-use crate::segment_path::SegmentPath;
+use super::min_heap::MinHeap;
+use crate::SegRTree;
+use crate::SegmentPath;
+use crate::SegmentUnion;
 use crate::{Coordinate, Rectangle};
 
 type Heap = MinHeap<(usize, usize)>;

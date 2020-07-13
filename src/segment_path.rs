@@ -112,10 +112,6 @@ impl SegmentPath {
         Ok(())
     }
 
-    pub fn contains<IP: Into<Coordinate>>(&self, point: IP) -> Result<bool, String> {
-        self.rtree.check_containment(point.into(), &self.coords)
-    }
-
     pub fn coords(&self) -> &[Coordinate] {
         &self.coords
     }
@@ -259,16 +255,5 @@ mod tests {
                 position: (0.5, 0.5).into(),
             },
         );
-    }
-
-    #[test]
-    fn check_containment() {
-        let loop_a =
-            SegmentPath::try_from(vec![(0., 0.), (0., 1.), (1., 1.), (1., 0.), (0., 0.)]).unwrap();
-        assert!(loop_a.contains((0.5, 0.5)).unwrap());
-        assert!(loop_a.contains((0.0, 0.0)).unwrap());
-        assert!(loop_a.contains((0.5, 0.0)).unwrap());
-        assert!(loop_a.contains((0.0, 0.5)).unwrap());
-        assert!(!loop_a.contains((1.1, 0.0)).unwrap());
     }
 }

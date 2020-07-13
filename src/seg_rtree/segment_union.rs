@@ -1,5 +1,6 @@
 use std::collections::BTreeSet;
 
+#[derive(Default)]
 pub struct SegmentUnion {
     set: BTreeSet<usize>,
 }

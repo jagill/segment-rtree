@@ -1,4 +1,4 @@
-use crate::utils::{calculate_level_indices, winding_number};
+use crate::utils::calculate_level_indices;
 use crate::{Coordinate, Rectangle};
 
 #[allow(dead_code)]
@@ -186,52 +186,6 @@ impl SegRTree {
         }
 
         results
-    }
-
-    pub fn check_containment(
-        &self,
-        point: Coordinate,
-        coords: &[Coordinate],
-    ) -> Result<bool, String> {
-        if coords.len() - 1 != self.current_size {
-            return Err("Supplied coordinates don't match SegRTree size.".to_owned());
-        }
-        if coords.len() < 4 {
-            return Err(format!(
-                "Only supplied {} coordinates; can't be a loop.",
-                coords.len()
-            ));
-        }
-        if coords[0] != coords[coords.len() - 1] {
-            return Err("Coordinates are not a loop.".to_owned());
-        }
-
-        let mut wn: i32 = 0;
-
-        // Stack entries: (level, offset)
-        let mut stack = vec![(self.current_level, 0)];
-        while let Some((level, offset)) = stack.pop() {
-            let rect = self.get_rectangle(level, offset);
-            if rect.x_min > point.x {
-                let (low, high) = self.get_low_high(level, offset);
-                wn += winding_number(point, coords[low], coords[high]);
-                continue;
-            }
-            if !rect.contains(point) {
-                continue;
-            }
-            if level == 0 {
-                wn += winding_number(point, coords[offset], coords[offset + 1]);
-            } else {
-                let child_level = level - 1;
-                let first_child_offset = self.degree * offset;
-                for child_offset in first_child_offset..(first_child_offset + self.degree) {
-                    stack.push((child_level, child_offset));
-                }
-            }
-        }
-
-        Ok(wn != 0)
     }
 
     pub(crate) fn get_rectangle(&self, level: usize, offset: usize) -> Rectangle {
