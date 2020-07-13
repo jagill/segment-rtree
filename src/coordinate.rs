@@ -70,3 +70,40 @@ impl Mul<f64> for Coordinate {
         }
     }
 }
+
+impl Mul<Coordinate> for f64 {
+    type Output = Coordinate;
+
+    fn mul(self, rhs: Coordinate) -> Self::Output {
+        Coordinate {
+            x: rhs.x * self,
+            y: rhs.y * self,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_mul() {
+        let p = Coordinate::new(1., 2.);
+        let expected = Coordinate::new(0.2, 0.4);
+        assert_eq!(p * 0.2, expected);
+        assert_eq!(0.2 * p, expected);
+    }
+
+    #[allow(clippy::float_cmp)]
+    #[test]
+    fn test_cross() {
+        let p = Coordinate::new(1., 2.);
+        assert_eq!(p.cross(p), 0.);
+
+        let p1 = Coordinate::new(1., 0.);
+        let p2 = Coordinate::new(0., 1.);
+        assert_eq!(p1.cross(p2), 1.);
+        assert_eq!(p2.cross(p1), -1.);
+        assert_eq!((3. * p1).cross(5. * p2), 3. * 5.);
+    }
+}
