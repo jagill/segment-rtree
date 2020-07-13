@@ -1,4 +1,5 @@
 mod coordinate;
+pub mod errors;
 mod flatbush;
 pub mod from_wkt;
 mod rectangle;

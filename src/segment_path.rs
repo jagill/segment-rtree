@@ -1,40 +1,13 @@
+use crate::errors::ValidationError;
 use crate::seg_rtree::SegRTree;
 use crate::utils::intersect_segments;
 use crate::{Coordinate, Rectangle};
 use std::convert::TryFrom;
-use thiserror::Error;
 
 #[derive(Debug)]
 pub struct SegmentPath {
     coords: Vec<Coordinate>,
     rtree: SegRTree,
-}
-
-#[derive(Error, Debug, PartialEq)]
-pub enum ValidationError {
-    #[error("Path has only 1 coordinate")]
-    SinglePathCoordinate,
-
-    #[error("Degenenerate Segment {index} at {position:?}")]
-    DegenerateSegment { index: usize, position: Coordinate },
-
-    #[error("Overlapping segments {first_index} {second_index} between {start:?} and {end:?}")]
-    OverlappingSegments {
-        first_index: usize,
-        second_index: usize,
-        start: Coordinate,
-        end: Coordinate,
-    },
-
-    #[error("Self-intersection for segments {first_index} {second_index} at {position:?}")]
-    SelfIntersection {
-        first_index: usize,
-        second_index: usize,
-        position: Coordinate,
-    },
-
-    #[error("Path is not a loop: first and last coordinates are not equal.")]
-    NotALoop,
 }
 
 impl<IP: Into<Coordinate>> TryFrom<Vec<IP>> for SegmentPath {
