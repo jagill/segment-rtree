@@ -1,5 +1,6 @@
 mod coordinate;
 mod flatbush;
+pub mod from_wkt;
 mod geometries;
 mod rectangle;
 mod seg_rtree;
