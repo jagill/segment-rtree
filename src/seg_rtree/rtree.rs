@@ -270,8 +270,8 @@ mod tests {
         let mut tree = SegRTree::new(2, 0);
         assert_eq!(tree.current_size, 0);
         assert_eq!(tree.current_level, 0);
-        assert_eq!(tree.query_point(p1), Vec::new());
-        assert_eq!(tree.query_rect(r), Vec::new());
+        assert_eq!(tree.query_point(p1), Vec::<usize>::new());
+        assert_eq!(tree.query_rect(r), Vec::<usize>::new());
         assert!(tree.add(r).is_err());
     }
 
