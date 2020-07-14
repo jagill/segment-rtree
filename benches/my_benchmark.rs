@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use seg_rtree::{Coordinate, Flatbush, Rectangle, SegRTree, SegmentPath};
+use seg_rtree::{Coordinate, Flatbush, Rectangle, SegRTree, LineString};
 
 use seg_rtree::from_wkt::{parse_wkt, Geometry};
 use std::fs;

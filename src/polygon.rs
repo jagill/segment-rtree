@@ -1,13 +1,13 @@
 use crate::errors::ValidationError;
-use crate::SegmentPath;
+use crate::LineString;
 
 pub struct Polygon {
-    shell: SegmentPath,
-    holes: Vec<SegmentPath>,
+    shell: LineString,
+    holes: Vec<LineString>,
 }
 
 impl Polygon {
-    pub fn new(shell: SegmentPath, holes: Vec<SegmentPath>) -> Self {
+    pub fn new(shell: LineString, holes: Vec<LineString>) -> Self {
         Polygon { shell, holes }
     }
 
@@ -15,11 +15,11 @@ impl Polygon {
         Ok(())
     }
 
-    pub fn shell(&self) -> &SegmentPath {
+    pub fn shell(&self) -> &LineString {
         &self.shell
     }
 
-    pub fn holes(&self) -> &[SegmentPath] {
+    pub fn holes(&self) -> &[LineString] {
         &self.holes
     }
 }

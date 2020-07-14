@@ -5,20 +5,20 @@ use crate::{Coordinate, Rectangle};
 use std::convert::TryFrom;
 
 #[derive(Debug)]
-pub struct SegmentPath {
+pub struct LineString {
     coords: Vec<Coordinate>,
     rtree: SegRTree,
 }
 
-impl<IP: Into<Coordinate>> TryFrom<Vec<IP>> for SegmentPath {
+impl<IP: Into<Coordinate>> TryFrom<Vec<IP>> for LineString {
     type Error = ValidationError;
 
     fn try_from(coords: Vec<IP>) -> Result<Self, Self::Error> {
-        SegmentPath::new_validated(coords.into_iter().map(|ip| ip.into()).collect())
+        LineString::new_validated(coords.into_iter().map(|ip| ip.into()).collect())
     }
 }
 
-impl SegmentPath {
+impl LineString {
     pub fn new(coords: Vec<Coordinate>) -> Self {
         let rtree = if coords.is_empty() {
             SegRTree::new_empty()
@@ -31,13 +31,13 @@ impl SegmentPath {
             SegRTree::new_loaded(16, &rectangles)
         };
 
-        SegmentPath { coords, rtree }
+        LineString { coords, rtree }
     }
 
-    /// Create a SegmentPath and validate it during construction.
+    /// Create a LineString and validate it during construction.
     pub fn new_validated(coords: Vec<Coordinate>) -> Result<Self, ValidationError> {
         if coords.is_empty() {
-            return Ok(SegmentPath {
+            return Ok(LineString {
                 coords,
                 rtree: SegRTree::new_empty(),
             });
@@ -63,7 +63,7 @@ impl SegmentPath {
                 .add(Rectangle::new(start, end))
                 .expect("Incorrect rtree size in construction");
         }
-        Ok(SegmentPath { coords, rtree })
+        Ok(LineString { coords, rtree })
     }
 
     pub fn validate(&self) -> Result<(), ValidationError> {
@@ -156,16 +156,16 @@ mod tests {
 
     #[test]
     fn test_empty_path() {
-        let path = SegmentPath::new_validated(Vec::new()).expect("Construction should not fail.");
+        let path = LineString::new_validated(Vec::new()).expect("Construction should not fail.");
         assert_eq!(path.coords, Vec::new());
     }
 
     fn assert_path_ok(coords: Vec<(f64, f64)>) {
         let positions: Vec<Coordinate> = coords.clone().into_iter().map(|c| c.into()).collect();
-        let path = SegmentPath::try_from(coords).expect("Construction should not fail");
+        let path = LineString::try_from(coords).expect("Construction should not fail");
         assert_eq!(path.coords, positions);
         assert_eq!(path.rtree.len(), positions.len() - 1);
-        let path = SegmentPath::new(positions.clone());
+        let path = LineString::new(positions.clone());
         path.validate().unwrap();
         assert_eq!(path.coords, positions);
         assert_eq!(path.rtree.len(), positions.len() - 1);
@@ -173,9 +173,9 @@ mod tests {
 
     fn assert_invalid_path(coords: Vec<(f64, f64)>, expected: ValidationError) {
         let positions: Vec<Coordinate> = coords.clone().into_iter().map(|c| c.into()).collect();
-        let err = SegmentPath::try_from(coords).expect_err("Expected validation to fail");
+        let err = LineString::try_from(coords).expect_err("Expected validation to fail");
         assert_eq!(err, expected);
-        let path = SegmentPath::new(positions);
+        let path = LineString::new(positions);
         let err = path.validate().expect_err("Expected validation to fail");
         assert_eq!(err, expected);
     }

@@ -1,9 +1,9 @@
 use crate::errors::ValidationError;
 use crate::utils::winding_number;
 use crate::Coordinate;
-use crate::SegmentPath;
+use crate::LineString;
 
-pub fn point_in_polygon(point: Coordinate, path: &SegmentPath) -> Result<bool, ValidationError> {
+pub fn point_in_polygon(point: Coordinate, path: &LineString) -> Result<bool, ValidationError> {
     let coords = path.coords();
     let rtree = path.rtree();
     if coords.len() < 4 || coords[0] != coords[coords.len() - 1] {
@@ -46,7 +46,7 @@ mod tests {
     #[test]
     fn check_containment() {
         let loop_a =
-            SegmentPath::try_from(vec![(0., 0.), (0., 1.), (1., 1.), (1., 0.), (0., 0.)]).unwrap();
+            LineString::try_from(vec![(0., 0.), (0., 1.), (1., 1.), (1., 0.), (0., 0.)]).unwrap();
         assert!(point_in_polygon((0.5, 0.5).into(), &loop_a).unwrap());
         assert!(point_in_polygon((0.0, 0.0).into(), &loop_a).unwrap());
         assert!(point_in_polygon((0.5, 0.0).into(), &loop_a).unwrap());
