@@ -26,4 +26,10 @@ pub enum ValidationError {
 
     #[error("Path is not a loop: first and last coordinates are not equal.")]
     NotARing,
+
+    #[error("Hole is not contained in the shell or intersects too many times.")]
+    HoleNotValid,
+
+    #[error("Polygon rings have >1 intersection.")]
+    MultipleIntersections,
 }
