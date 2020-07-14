@@ -92,6 +92,10 @@ impl SegmentPath {
     pub fn rtree(&self) -> &SegRTree {
         &self.rtree
     }
+
+    pub fn envelope(&self) -> Rectangle {
+        self.rtree.envelope()
+    }
 }
 
 fn check_intersection(

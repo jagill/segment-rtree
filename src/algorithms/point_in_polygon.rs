@@ -1,21 +1,13 @@
+use crate::errors::ValidationError;
 use crate::utils::winding_number;
 use crate::Coordinate;
 use crate::SegmentPath;
 
-pub fn point_in_polygon(point: Coordinate, path: &SegmentPath) -> Result<bool, String> {
+pub fn point_in_polygon(point: Coordinate, path: &SegmentPath) -> Result<bool, ValidationError> {
     let coords = path.coords();
     let rtree = path.rtree();
-    if coords.len() - 1 != rtree.len() {
-        return Err("Supplied coordinates don't match SegRTree size.".to_owned());
-    }
-    if coords.len() < 4 {
-        return Err(format!(
-            "Only supplied {} coordinates; can't be a loop.",
-            coords.len()
-        ));
-    }
-    if coords[0] != coords[coords.len() - 1] {
-        return Err("Coordinates are not a loop.".to_owned());
+    if coords.len() < 4 || coords[0] != coords[coords.len() - 1] {
+        return Err(ValidationError::NotARing);
     }
 
     let mut wn: i32 = 0;

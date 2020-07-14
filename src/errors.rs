@@ -25,5 +25,5 @@ pub enum ValidationError {
     },
 
     #[error("Path is not a loop: first and last coordinates are not equal.")]
-    NotALoop,
+    NotARing,
 }

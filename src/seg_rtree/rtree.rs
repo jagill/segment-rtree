@@ -18,6 +18,10 @@ impl SegRTree {
         self.current_size
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.current_size == 0
+    }
+
     pub fn height(&self) -> usize {
         self.current_level
     }
@@ -124,7 +128,7 @@ impl SegRTree {
         P: Fn(usize, usize) -> bool,
     {
         let mut results = Vec::new();
-        if self.current_size == 0 {
+        if self.is_empty() {
             return results;
         }
 
@@ -150,7 +154,7 @@ impl SegRTree {
 
     pub fn query_self_intersections(&self) -> Vec<(usize, usize)> {
         let mut results = Vec::new();
-        if self.current_size == 0 {
+        if self.is_empty() {
             return results;
         }
 
@@ -176,6 +180,43 @@ impl SegRTree {
                 }
             } else {
                 assert_eq!(level_a + 1, level_b);
+                let child_level = level_b - 1;
+                let first_child_offset = self.degree * offset_b;
+                let last_child_offset = first_child_offset + self.degree;
+                for child_offset in first_child_offset..last_child_offset {
+                    stack.push((level_a, offset_a, child_level, child_offset));
+                }
+            }
+        }
+
+        results
+    }
+
+    pub fn query_other_intersections(&self, other: &SegRTree) -> Vec<(usize, usize)> {
+        let mut results = Vec::new();
+        if self.is_empty() || other.is_empty() {
+            return results;
+        }
+
+        // Stack entries: (level, offset)
+        let mut stack = vec![(self.height(), 0, other.height(), 0)];
+
+        while let Some((level_a, offset_a, level_b, offset_b)) = stack.pop() {
+            let rect_a = self.get_rectangle(level_a, offset_a);
+            let rect_b = self.get_rectangle(level_b, offset_b);
+            if !rect_a.intersects(rect_b) {
+                continue;
+            }
+
+            if level_a == 0 && level_b == 0 {
+                results.push((offset_a, offset_b));
+            } else if level_a >= level_b {
+                let child_level = level_a - 1;
+                let first_child_offset = self.degree * offset_a;
+                for child_offset in first_child_offset..(first_child_offset + self.degree) {
+                    stack.push((child_level, child_offset, level_b, offset_b));
+                }
+            } else {
                 let child_level = level_b - 1;
                 let first_child_offset = self.degree * offset_b;
                 let last_child_offset = first_child_offset + self.degree;

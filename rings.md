@@ -117,14 +117,14 @@ corresponding paths from the other ring, which is at least 4 intersetions,
 and we are done.
 
 If `p_min.x < q_min.x`, consider the points `p_right` and `q_right` with `x`
-coordintes `x_max`.
-The path between `p_max` and `p_right` must intersect the path `q_max` to
-`q_min`, and this holds for `p_min` as well.  Note that this holds conversely.
-so there must be at least 4 intersection points.
+coordintes `x_max`. The path between `p_max` and `p_right` must intersect the
+path `q_max` to `q_min`, and this holds for `p_min` as well. Note that this
+holds conversely. so there must be at least 4 intersection points.
 
-To handle the "single-equality" case (say, `p_min == q_min`), the above argument may only produce a single point of intersection in each direction.  But
-since the same argument holds for paths from `q_min` to `q_left`, we still have
-two points of intersection.
+To handle the "single-equality" case (say, `p_min == q_min`), the above
+argument may only produce a single point of intersection in each direction.
+But since the same argument holds for paths from `q_min` to `q_left`, we
+still have two points of intersection.
 
 **TODO**: Tighten/clarify argument.
 
