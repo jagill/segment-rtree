@@ -32,4 +32,7 @@ pub enum ValidationError {
 
     #[error("Polygon rings have >1 intersection.")]
     MultipleIntersections,
+
+    #[error("Polygon interior is disconneted.")]
+    InteriorDisconnected,
 }
