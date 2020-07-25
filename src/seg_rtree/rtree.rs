@@ -1,5 +1,5 @@
 use crate::utils::calculate_level_indices;
-use crate::{Coordinate, Rectangle};
+use crate::{Coordinate, HasEnvelope, Rectangle};
 
 #[allow(dead_code)]
 #[derive(Debug)]
@@ -10,6 +10,12 @@ pub struct SegRTree {
     current_level: usize,
     level_indices: Vec<usize>,
     tree: Vec<Rectangle>,
+}
+
+impl HasEnvelope for SegRTree {
+    fn envelope(&self) -> Rectangle {
+        self.get_rectangle(self.height() - 1, 0)
+    }
 }
 
 #[allow(dead_code)]
@@ -83,10 +89,6 @@ impl SegRTree {
             level_indices,
             tree,
         }
-    }
-
-    pub fn envelope(&self) -> Rectangle {
-        self.get_rectangle(self.height() - 1, 0)
     }
 
     pub fn add(&mut self, mut rect: Rectangle) -> Result<(), String> {
@@ -235,7 +237,9 @@ impl SegRTree {
 
     pub(crate) fn get_low_high(&self, level: usize, offset: usize) -> (usize, usize) {
         let width = self.degree.pow(level as u32);
-        (width * offset, width * (offset + 1))
+        // index is for coordinates, and coordinates.len() == rectangles.len() + 1
+        let max_index = self.current_size;
+        (width * offset, max_index.min(width * (offset + 1)))
     }
 
     pub(crate) fn root(&self) -> (usize, usize) {
@@ -252,6 +256,8 @@ fn copy_into_tree(tree: &mut [Rectangle], index: usize, rects: &[Rectangle]) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rand::rngs::SmallRng;
+    use rand::{Rng, SeedableRng};
 
     #[test]
     fn test_empty_seg_rtree() {
@@ -341,5 +347,25 @@ mod tests {
         let mut results = tree.query_rect(rect);
         results.sort_unstable();
         assert_eq!(results, vec![1, 2, 3]);
+    }
+
+    fn assert_low_high(rtree: &SegRTree, height: usize, offset: usize, size: usize) {
+        let (low, high) = rtree.get_low_high(height, offset);
+        assert!(low <= size);
+        assert!(high <= size);
+    }
+
+    #[test]
+    fn test_low_high_indices() {
+        let mut rng = SmallRng::seed_from_u64(177);
+
+        for _i in 0..50 {
+            let size = rng.gen_range(1, 1000);
+            let zero = Coordinate::new(0., 0.);
+            let rect = Rectangle::new(zero, zero);
+            let rects = vec![rect; size];
+            let rtree = SegRTree::new_loaded(16, &rects);
+            assert_low_high(&rtree, rtree.height(), 0, size);
+        }
     }
 }

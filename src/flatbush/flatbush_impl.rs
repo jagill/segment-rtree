@@ -6,7 +6,7 @@
  */
 use super::hilbert::Hilbert;
 use crate::utils::calculate_level_indices;
-use crate::{Coordinate, Rectangle};
+use crate::{Coordinate, HasEnvelope, Rectangle};
 
 pub const FLATBUSH_DEFAULT_DEGREE: usize = 16;
 
@@ -18,6 +18,12 @@ pub struct Flatbush {
     level_indices: Vec<usize>,
     tree: Vec<Rectangle>,
     node_indices: Vec<usize>,
+}
+
+impl HasEnvelope for Flatbush {
+    fn envelope(&self) -> Rectangle {
+        self.get_rectangle(self.height(), 0)
+    }
 }
 
 #[allow(dead_code)]
@@ -104,10 +110,6 @@ impl Flatbush {
 
     fn get_rectangle(&self, level: usize, offset: usize) -> Rectangle {
         self.tree[self.level_indices[level] + offset]
-    }
-
-    fn envelope(&self) -> Rectangle {
-        self.get_rectangle(self.height(), 0)
     }
 
     /**

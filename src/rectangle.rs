@@ -22,6 +22,27 @@ impl PartialEq for Rectangle {
     }
 }
 
+pub trait HasEnvelope {
+    fn envelope(&self) -> Rectangle;
+}
+
+impl HasEnvelope for Coordinate {
+    fn envelope(&self) -> Rectangle {
+        Rectangle {
+            x_min: self.x,
+            y_min: self.y,
+            x_max: self.x,
+            y_max: self.y,
+        }
+    }
+}
+
+impl HasEnvelope for Rectangle {
+    fn envelope(&self) -> Rectangle {
+        *self
+    }
+}
+
 impl Rectangle {
     pub fn new(p1: Coordinate, p2: Coordinate) -> Self {
         Rectangle {
@@ -41,15 +62,15 @@ impl Rectangle {
         }
     }
 
-    pub fn of(rects: &[Rectangle]) -> Self {
-        rects.iter().fold(Rectangle::new_empty(), |mut s, r| {
-            s.expand(*r);
-            s
-        })
-    }
-
     pub fn is_empty(&self) -> bool {
         self.x_min.is_nan() || self.y_min.is_nan() || self.x_max.is_nan() || self.y_max.is_nan()
+    }
+
+    pub fn of<T: HasEnvelope>(items: &[T]) -> Self {
+        items.iter().fold(Rectangle::new_empty(), |mut s, r| {
+            s.expand(r.envelope());
+            s
+        })
     }
 
     pub fn center(&self) -> Coordinate {
@@ -59,32 +80,38 @@ impl Rectangle {
         }
     }
 
-    pub fn intersects(&self, other: Rectangle) -> bool {
+    pub fn intersects<T: HasEnvelope>(&self, item: T) -> bool {
+        let other = item.envelope();
         self.x_min <= other.x_max
             && self.x_max >= other.x_min
             && self.y_min <= other.y_max
             && self.y_max >= other.y_min
     }
 
-    pub fn contains(&self, point: Coordinate) -> bool {
-        self.x_min <= point.x
-            && point.x <= self.x_max
-            && self.y_min <= point.y
-            && point.y <= self.y_max
-    }
-
-    pub fn contains_rect(&self, other: Rectangle) -> bool {
+    pub fn contains<T: HasEnvelope>(&self, item: T) -> bool {
+        let other = item.envelope();
         self.x_min <= other.x_min
             && self.x_max >= other.x_max
             && self.y_min <= other.y_min
             && self.y_max >= other.y_max
     }
 
-    pub fn expand(&mut self, other: Rectangle) {
-        self.x_min = self.x_min.min(other.x_min);
-        self.y_min = self.y_min.min(other.y_min);
-        self.x_max = self.x_max.max(other.x_max);
-        self.y_max = self.y_max.max(other.y_max);
+    pub fn merge<T: HasEnvelope>(&self, item: T) -> Self {
+        let rect = item.envelope();
+        Rectangle {
+            x_min: self.x_min.min(rect.x_min),
+            y_min: self.y_min.min(rect.y_min),
+            x_max: self.x_max.max(rect.x_max),
+            y_max: self.y_max.max(rect.y_max),
+        }
+    }
+
+    pub fn expand<T: HasEnvelope>(&mut self, item: T) {
+        let rect = item.envelope();
+        self.x_min = self.x_min.min(rect.x_min);
+        self.y_min = self.y_min.min(rect.y_min);
+        self.x_max = self.x_max.max(rect.x_max);
+        self.y_max = self.y_max.max(rect.y_max);
     }
 
     /// Return the intersection of the segment defined by start and end.

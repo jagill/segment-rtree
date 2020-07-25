@@ -2,7 +2,7 @@ use super::point_in_polygon::point_in_polygon;
 use crate::errors::ValidationError;
 use crate::errors::ValidationError::*;
 use crate::utils::intersect_segments;
-use crate::{Coordinate, Polygon, LineString};
+use crate::{Coordinate, LineString, Polygon};
 use std::collections::HashMap;
 
 type IntersectionMap = HashMap<(usize, usize), Coordinate>;
@@ -19,7 +19,7 @@ pub fn validate_polygon(polygon: &Polygon) -> Result<(), ValidationError> {
         if hole.coords().first() != hole.coords().last() {
             return Err(NotARing);
         }
-        if shell.envelope() == hole.envelope() || !shell.envelope().contains_rect(hole.envelope()) {
+        if shell.envelope() == hole.envelope() || !shell.envelope().contains(hole.envelope()) {
             return Err(HoleNotValid);
         }
 
