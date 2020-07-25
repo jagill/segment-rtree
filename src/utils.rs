@@ -18,7 +18,7 @@ pub(crate) fn calculate_level_indices(degree: usize, num_items: usize) -> Vec<us
     level_indices
 }
 
-pub(crate) fn winding_number(point: Coordinate, start: Coordinate, end: Coordinate) -> i32 {
+pub fn winding_number(point: Coordinate, start: Coordinate, end: Coordinate) -> i32 {
     // Calculate the two halves of the cross-product (= lx - rx)
     let lx = (end.x - start.x) * (point.y - start.y);
     let rx = (end.y - start.y) * (point.x - start.x);
