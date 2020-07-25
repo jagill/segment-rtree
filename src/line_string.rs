@@ -1,7 +1,7 @@
 use crate::errors::ValidationError;
 use crate::seg_rtree::SegRTree;
 use crate::utils::intersect_segments;
-use crate::{Coordinate, Rectangle};
+use crate::{Coordinate, HasEnvelope, Rectangle};
 use std::convert::TryFrom;
 
 #[derive(Debug)]

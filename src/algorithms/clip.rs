@@ -1,6 +1,6 @@
 use super::min_heap::MinHeap;
-use crate::SegRTree;
 use crate::LineString;
+use crate::SegRTree;
 use crate::SegmentUnion;
 use crate::{Coordinate, Rectangle};
 
@@ -43,7 +43,7 @@ impl<'a> Clipper<'a> {
                 continue;
             }
             let (low, high) = self.rtree.get_low_high(level, offset);
-            if self.clip_rect.contains_rect(rect) {
+            if self.clip_rect.contains(rect) {
                 contained.add(low, high);
             } else if level == 0 {
                 intersects.push((low, high));
