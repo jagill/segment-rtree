@@ -1,7 +1,6 @@
 use crate::errors::ValidationError;
 use crate::utils::winding_number;
-use crate::Coordinate;
-use crate::LineString;
+use crate::{Coordinate, LineString, Rectangle};
 
 pub fn point_in_polygon(point: Coordinate, path: &LineString) -> Result<bool, ValidationError> {
     let coords = path.coords();
@@ -13,15 +12,15 @@ pub fn point_in_polygon(point: Coordinate, path: &LineString) -> Result<bool, Va
     let mut wn: i32 = 0;
 
     // Stack entries: (level, offset)
-    let mut stack = vec![(rtree.height(), 0)];
+    let mut stack = Vec::with_capacity(rtree.height() * rtree.degree());
+    if check_point_rect(point, rtree.get_rectangle(rtree.height(), 0)) {
+        stack.push((rtree.height(), 0));
+    }
     while let Some((level, offset)) = stack.pop() {
         let rect = rtree.get_rectangle(level, offset);
         if rect.x_min > point.x {
             let (low, high) = rtree.get_low_high(level, offset);
             wn += winding_number(point, coords[low], coords[high]);
-            continue;
-        }
-        if !rect.contains(point) {
             continue;
         }
         if level == 0 {
@@ -30,12 +29,17 @@ pub fn point_in_polygon(point: Coordinate, path: &LineString) -> Result<bool, Va
             let child_level = level - 1;
             let first_child_offset = rtree.degree() * offset;
             for child_offset in first_child_offset..(first_child_offset + rtree.degree()) {
-                stack.push((child_level, child_offset));
+                if check_point_rect(point, rtree.get_rectangle(child_level, child_offset)) {
+                    stack.push((child_level, child_offset));
+                }
             }
         }
     }
-
     Ok(wn != 0)
+}
+
+fn check_point_rect(point: Coordinate, rect: Rectangle) -> bool {
+    point.x <= rect.x_max && point.y >= rect.y_min && point.y <= rect.y_max
 }
 
 #[cfg(test)]
