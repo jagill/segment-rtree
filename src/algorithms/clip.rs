@@ -193,6 +193,34 @@ mod tests {
         );
     }
 
+    #[test]
+    fn test_loops() {
+        let rect = Rectangle::new((0., 0.).into(), (1., 1.).into());
+        assert_clip(
+            rect,
+            vec![
+                (0.25, 0.25),
+                (0.75, 0.25),
+                (0.75, 0.75),
+                (0.25, 0.75),
+                (0.25, 0.25),
+            ],
+            vec![vec![
+                (0.25, 0.25),
+                (0.75, 0.25),
+                (0.75, 0.75),
+                (0.25, 0.75),
+                (0.25, 0.25),
+            ]],
+        );
+        // This is actually not what we want!  We'd like to stitch these together.
+        assert_clip(
+            rect,
+            vec![(0.5, 0.5), (1.5, 0.5), (1.5, 1.5), (0.5, 1.5), (0.5, 0.5)],
+            vec![vec![(0.5, 0.5), (1.0, 0.5)], vec![(0.5, 1.0), (0.5, 0.5)]],
+        );
+    }
+
     #[allow(dead_code)]
     fn test_numerical_precision() {
         let rect = Rectangle::new((0., 0.).into(), (1., 1.).into());
