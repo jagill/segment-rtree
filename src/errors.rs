@@ -35,4 +35,10 @@ pub enum ValidationError {
 
     #[error("Polygon interior is disconneted.")]
     InteriorDisconnected,
+
+    #[error("Rings must have at least 4 coordinates.")]
+    TooFewCoordinates,
+
+    #[error("Rings must have their first and last coordinate equal.")]
+    NotClosed,
 }

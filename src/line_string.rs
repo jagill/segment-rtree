@@ -7,8 +7,8 @@ use std::convert::TryFrom;
 
 #[derive(Debug)]
 pub struct LineString<S> {
-    coords: Vec<Coordinate>,
-    state: S,
+    pub(crate) coords: Vec<Coordinate>,
+    pub(crate) state: S,
 }
 
 impl<S: HasRTree> HasRTree for LineString<S> {
@@ -18,7 +18,7 @@ impl<S: HasRTree> HasRTree for LineString<S> {
 }
 
 impl<S> LineString<S> {
-    pub fn coords(&self) -> &[Coordinate] {
+    pub fn coords(&self) -> &Vec<Coordinate> {
         &self.coords
     }
 }
