@@ -1,8 +1,12 @@
 use crate::errors::ValidationError;
+use crate::geometry_state::{HasRTree, Validated};
 use crate::utils::winding_number;
 use crate::{Coordinate, LineString, Rectangle};
 
-pub fn point_in_polygon(point: Coordinate, path: &LineString) -> Result<bool, ValidationError> {
+pub fn point_in_polygon(
+    point: Coordinate,
+    path: &LineString<Validated>,
+) -> Result<bool, ValidationError> {
     let coords = path.coords();
     let rtree = path.rtree();
     if coords.len() < 4 || coords[0] != coords[coords.len() - 1] {

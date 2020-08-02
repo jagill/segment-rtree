@@ -1,72 +1,55 @@
 use crate::errors::ValidationError;
+use crate::geometry_state::{HasRTree, Prepared, Raw, Validated};
 use crate::seg_rtree::SegRTree;
-use crate::utils::intersect_segments;
-use crate::{Coordinate, HasEnvelope, Rectangle};
+use crate::utils::{intersect_segments, rectangles_from_coordinates};
+use crate::Coordinate;
 use std::convert::TryFrom;
 
 #[derive(Debug)]
-pub struct LineString {
+pub struct LineString<S> {
     coords: Vec<Coordinate>,
-    rtree: SegRTree,
+    state: S,
 }
 
-impl<IP: Into<Coordinate>> TryFrom<Vec<IP>> for LineString {
-    type Error = ValidationError;
-
-    fn try_from(coords: Vec<IP>) -> Result<Self, Self::Error> {
-        LineString::new_validated(coords.into_iter().map(|ip| ip.into()).collect())
+impl<S: HasRTree> HasRTree for LineString<S> {
+    fn rtree(&self) -> &SegRTree {
+        self.state.rtree()
     }
 }
 
-impl LineString {
+impl<S> LineString<S> {
+    pub fn coords(&self) -> &[Coordinate] {
+        &self.coords
+    }
+}
+
+impl LineString<Raw> {
     pub fn new(coords: Vec<Coordinate>) -> Self {
-        let rtree = if coords.is_empty() {
+        LineString {
+            coords,
+            state: Raw {},
+        }
+    }
+
+    pub fn prepare(self) -> LineString<Prepared> {
+        let rtree = if self.coords.is_empty() {
             SegRTree::new_empty()
         } else {
-            let rectangles: Vec<Rectangle> = coords
-                .windows(2)
-                .map(|c| Rectangle::new(c[0], c[1]))
-                .collect();
-
-            SegRTree::new_loaded(16, &rectangles)
+            SegRTree::new_loaded(16, &rectangles_from_coordinates(&self.coords))
         };
-
-        LineString { coords, rtree }
+        LineString {
+            coords: self.coords,
+            state: Prepared { rtree },
+        }
     }
 
-    /// Create a LineString and validate it during construction.
-    pub fn new_validated(coords: Vec<Coordinate>) -> Result<Self, ValidationError> {
-        if coords.is_empty() {
-            return Ok(LineString {
-                coords,
-                rtree: SegRTree::new_empty(),
-            });
-        }
-        if coords.len() == 1 {
-            return Err(ValidationError::SinglePathCoordinate);
-        }
-        let mut rtree = SegRTree::new(16, coords.len() - 1);
-        for (index, range) in coords.windows(2).enumerate() {
-            let start = range[0];
-            let end = range[1];
-            if start == end {
-                return Err(ValidationError::DegenerateSegment {
-                    index,
-                    position: start,
-                });
-            }
-
-            for other_index in rtree.query_rect(Rectangle::new(start, end)) {
-                check_intersection(index, other_index, &coords)?;
-            }
-            rtree
-                .add(Rectangle::new(start, end))
-                .expect("Incorrect rtree size in construction");
-        }
-        Ok(LineString { coords, rtree })
+    pub fn validate(self) -> Result<LineString<Validated>, ValidationError> {
+        self.prepare().validate()
     }
+}
 
-    pub fn validate(&self) -> Result<(), ValidationError> {
+impl LineString<Prepared> {
+    pub fn validate(self) -> Result<LineString<Validated>, ValidationError> {
         if self.coords.len() == 1 {
             return Err(ValidationError::SinglePathCoordinate);
         }
@@ -79,22 +62,28 @@ impl LineString {
             }
         }
 
-        for (index_a, index_b) in self.rtree.query_self_intersections() {
+        for (index_a, index_b) in self.rtree().query_self_intersections() {
             check_intersection(index_a, index_b, &self.coords)?;
         }
-        Ok(())
-    }
 
-    pub fn coords(&self) -> &[Coordinate] {
-        &self.coords
+        Ok(LineString {
+            coords: self.coords,
+            state: Validated {
+                rtree: self.state.rtree,
+            },
+        })
     }
+}
 
-    pub fn rtree(&self) -> &SegRTree {
-        &self.rtree
-    }
+impl LineString<Validated> {}
 
-    pub fn envelope(&self) -> Rectangle {
-        self.rtree.envelope()
+impl<IP: Into<Coordinate>> TryFrom<Vec<IP>> for LineString<Validated> {
+    type Error = ValidationError;
+
+    fn try_from(coords: Vec<IP>) -> Result<Self, Self::Error> {
+        LineString::new(coords.into_iter().map(|ip| ip.into()).collect())
+            .prepare()
+            .validate()
     }
 }
 
@@ -156,7 +145,8 @@ mod tests {
 
     #[test]
     fn test_empty_path() {
-        let path = LineString::new_validated(Vec::new()).expect("Construction should not fail.");
+        let path =
+            LineString::try_from(Vec::<Coordinate>::new()).expect("Construction should not fail.");
         assert_eq!(path.coords, Vec::new());
     }
 
@@ -164,11 +154,10 @@ mod tests {
         let positions: Vec<Coordinate> = coords.clone().into_iter().map(|c| c.into()).collect();
         let path = LineString::try_from(coords).expect("Construction should not fail");
         assert_eq!(path.coords, positions);
-        assert_eq!(path.rtree.len(), positions.len() - 1);
-        let path = LineString::new(positions.clone());
-        path.validate().unwrap();
+        assert_eq!(path.rtree().len(), positions.len() - 1);
+        let path = LineString::try_from(positions.clone()).expect("Construction should not fail");
         assert_eq!(path.coords, positions);
-        assert_eq!(path.rtree.len(), positions.len() - 1);
+        assert_eq!(path.rtree().len(), positions.len() - 1);
     }
 
     fn assert_invalid_path(coords: Vec<(f64, f64)>, expected: ValidationError) {

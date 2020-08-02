@@ -1,4 +1,11 @@
-use crate::Coordinate;
+use crate::{Coordinate, Rectangle};
+
+pub(crate) fn rectangles_from_coordinates(coords: &[Coordinate]) -> Vec<Rectangle> {
+    coords
+        .windows(2)
+        .map(|c| Rectangle::new(c[0], c[1]))
+        .collect()
+}
 
 pub(crate) fn calculate_level_indices(degree: usize, num_items: usize) -> Vec<usize> {
     let mut level_indices: Vec<usize> = vec![0];

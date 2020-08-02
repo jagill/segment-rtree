@@ -1,8 +1,9 @@
 use super::point_in_polygon::point_in_polygon;
 use crate::errors::ValidationError;
 use crate::errors::ValidationError::*;
+use crate::geometry_state::{HasRTree, Validated};
 use crate::utils::intersect_segments;
-use crate::{Coordinate, LineString, Polygon};
+use crate::{Coordinate, HasEnvelope, LineString, Polygon};
 use std::collections::{HashMap, HashSet};
 
 type Intersections = HashSet<(usize, usize)>;
@@ -63,8 +64,8 @@ pub fn validate_polygon(polygon: &Polygon) -> Result<(), ValidationError> {
 /// Find 0 or 1 intersecting points.  If there are 2 or more points, the
 /// intersection is invalid, and return a ValidationError.
 fn find_intersecting_point(
-    ring_a: &LineString,
-    ring_b: &LineString,
+    ring_a: &LineString<Validated>,
+    ring_b: &LineString<Validated>,
 ) -> Result<Option<Coordinate>, ValidationError> {
     let mut final_intersection = None;
     for (index_a, index_b) in ring_a.rtree().query_other_intersections(ring_b.rtree()) {

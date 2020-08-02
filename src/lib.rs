@@ -1,5 +1,6 @@
 mod coordinate;
 mod flatbush;
+mod geometry_state;
 mod line_string;
 mod polygon;
 mod rectangle;
