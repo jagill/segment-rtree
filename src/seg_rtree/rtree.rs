@@ -14,7 +14,7 @@ pub struct SegRTree {
 
 impl HasEnvelope for SegRTree {
     fn envelope(&self) -> Rectangle {
-        self.get_rectangle(self.height() - 1, 0)
+        self.get_rectangle(self.height(), 0)
     }
 }
 
@@ -118,16 +118,16 @@ impl SegRTree {
     }
 
     pub fn query_rect(&self, rect: Rectangle) -> Vec<usize> {
-        self.query(|level, offset| self.get_rectangle(level, offset).intersects(rect))
+        self.query(|rtree_rect| rtree_rect.intersects(rect))
     }
 
     pub fn query_point(&self, point: Coordinate) -> Vec<usize> {
-        self.query(|level, offset| self.get_rectangle(level, offset).contains(point))
+        self.query(|rtree_rect| rtree_rect.contains(point))
     }
 
     fn query<P>(&self, predicate: P) -> Vec<usize>
     where
-        P: Fn(usize, usize) -> bool,
+        P: Fn(Rectangle) -> bool,
     {
         let mut results = Vec::new();
         if self.is_empty() {
@@ -135,18 +135,20 @@ impl SegRTree {
         }
 
         // Stack entries: (level, offset)
-        let mut stack = vec![(self.height(), 0)];
+        let mut stack = Vec::new();
+        if predicate(self.envelope()) {
+            stack.push(self.root())
+        }
         while let Some((level, offset)) = stack.pop() {
-            if !predicate(level, offset) {
-                continue;
-            }
             if level == 0 {
                 results.push(offset);
             } else {
                 let child_level = level - 1;
                 let first_child_offset = self.degree * offset;
                 for child_offset in first_child_offset..(first_child_offset + self.degree) {
-                    stack.push((child_level, child_offset));
+                    if predicate(self.get_rectangle(child_level, child_offset)) {
+                        stack.push((child_level, child_offset));
+                    }
                 }
             }
         }
