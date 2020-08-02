@@ -3,7 +3,7 @@ use crate::errors::ValidationError;
 use crate::errors::ValidationError::*;
 use crate::geometry_state::{HasRTree, Validated};
 use crate::utils::intersect_segments;
-use crate::{Coordinate, HasEnvelope, LineString, Polygon};
+use crate::{Coordinate, HasEnvelope, LinearRing, Polygon};
 use std::collections::{HashMap, HashSet};
 
 type Intersections = HashSet<(usize, usize)>;
@@ -11,9 +11,6 @@ type Intersections = HashSet<(usize, usize)>;
 /// Validate a polygon, on the assumption its component paths are valid.
 pub fn validate_polygon(polygon: &Polygon) -> Result<(), ValidationError> {
     let shell = polygon.shell();
-    if shell.coords().first() != shell.coords().last() {
-        return Err(NotARing);
-    }
     let holes = polygon.holes();
     let mut intersections: Intersections = Intersections::new();
     for (i, hole) in holes.iter().enumerate() {
@@ -64,8 +61,8 @@ pub fn validate_polygon(polygon: &Polygon) -> Result<(), ValidationError> {
 /// Find 0 or 1 intersecting points.  If there are 2 or more points, the
 /// intersection is invalid, and return a ValidationError.
 fn find_intersecting_point(
-    ring_a: &LineString<Validated>,
-    ring_b: &LineString<Validated>,
+    ring_a: &LinearRing<Validated>,
+    ring_b: &LinearRing<Validated>,
 ) -> Result<Option<Coordinate>, ValidationError> {
     let mut final_intersection = None;
     for (index_a, index_b) in ring_a.rtree().query_other_intersections(ring_b.rtree()) {

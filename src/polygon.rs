@@ -1,14 +1,14 @@
 use crate::errors::ValidationError;
 use crate::geometry_state::Validated;
-use crate::LineString;
+use crate::LinearRing;
 
 pub struct Polygon {
-    shell: LineString<Validated>,
-    holes: Vec<LineString<Validated>>,
+    shell: LinearRing<Validated>,
+    holes: Vec<LinearRing<Validated>>,
 }
 
 impl Polygon {
-    pub fn new(shell: LineString<Validated>, holes: Vec<LineString<Validated>>) -> Self {
+    pub fn new(shell: LinearRing<Validated>, holes: Vec<LinearRing<Validated>>) -> Self {
         Polygon { shell, holes }
     }
 
@@ -16,11 +16,11 @@ impl Polygon {
         Ok(())
     }
 
-    pub fn shell(&self) -> &LineString<Validated> {
+    pub fn shell(&self) -> &LinearRing<Validated> {
         &self.shell
     }
 
-    pub fn holes(&self) -> &[LineString<Validated>] {
+    pub fn holes(&self) -> &[LinearRing<Validated>] {
         &self.holes
     }
 }

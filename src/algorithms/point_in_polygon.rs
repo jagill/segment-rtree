@@ -1,17 +1,14 @@
 use crate::errors::ValidationError;
 use crate::geometry_state::{HasRTree, Validated};
 use crate::utils::winding_number;
-use crate::{Coordinate, LineString, Rectangle};
+use crate::{Coordinate, LinearRing, Rectangle};
 
 pub fn point_in_polygon(
     point: Coordinate,
-    path: &LineString<Validated>,
+    path: &LinearRing<Validated>,
 ) -> Result<bool, ValidationError> {
     let coords = path.coords();
     let rtree = path.rtree();
-    if coords.len() < 4 || coords[0] != coords[coords.len() - 1] {
-        return Err(ValidationError::NotARing);
-    }
 
     let mut wn: i32 = 0;
 
@@ -54,7 +51,7 @@ mod tests {
     #[test]
     fn check_containment() {
         let loop_a =
-            LineString::try_from(vec![(0., 0.), (0., 1.), (1., 1.), (1., 0.), (0., 0.)]).unwrap();
+            LinearRing::try_from(vec![(0., 0.), (0., 1.), (1., 1.), (1., 0.), (0., 0.)]).unwrap();
         assert!(point_in_polygon((0.5, 0.5).into(), &loop_a).unwrap());
         assert!(point_in_polygon((0.0, 0.0).into(), &loop_a).unwrap());
         assert!(point_in_polygon((0.5, 0.0).into(), &loop_a).unwrap());
