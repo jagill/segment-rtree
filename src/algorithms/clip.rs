@@ -1,5 +1,6 @@
 use super::min_heap::MinHeap;
 use crate::geometry_state::{HasRTree, Validated};
+use crate::utils::copy_into_slice;
 use crate::LineString;
 use crate::SegRTree;
 use crate::SegmentUnion;
@@ -29,6 +30,19 @@ impl<'a> Clipper<'a> {
     pub fn clip(mut self) -> Vec<Vec<Coordinate>> {
         let (contained, intersects) = self.find_relevant_segments();
         self.build_output(contained, intersects);
+
+        // Check if we have a loop that starts and ends in the rectangle, but
+        // was clipped into two pieces
+        if self.output.len() > 1
+            && self.output.first().and_then(|ls| ls.first())
+                == self.output.last().and_then(|ls| ls.last())
+        {
+            let mut last_piece = self.output.pop().unwrap();
+            last_piece.pop();
+            last_piece.extend_from_slice(self.output.first().unwrap());
+            self.output.push(last_piece);
+            self.output.swap_remove(0);
+        }
         self.output
     }
 
@@ -215,11 +229,10 @@ mod tests {
                 (0.25, 0.25),
             ]],
         );
-        // This is actually not what we want!  We'd like to stitch these together.
         assert_clip(
             rect,
             vec![(0.5, 0.5), (1.5, 0.5), (1.5, 1.5), (0.5, 1.5), (0.5, 0.5)],
-            vec![vec![(0.5, 0.5), (1.0, 0.5)], vec![(0.5, 1.0), (0.5, 0.5)]],
+            vec![vec![(0.5, 1.0), (0.5, 0.5), (1.0, 0.5)]],
         );
     }
 
