@@ -44,6 +44,12 @@ pub(crate) fn winding_number(point: Coordinate, start: Coordinate, end: Coordina
     0
 }
 
+pub(crate) fn copy_into_slice<T: Copy>(tree: &mut [T], index: usize, items: &[T]) {
+    let (_, subtree) = tree.split_at_mut(index);
+    let (subtree, _) = subtree.split_at_mut(items.len());
+    subtree.copy_from_slice(items);
+}
+
 /**
  * Check the intersection of two segments A and B.
  *

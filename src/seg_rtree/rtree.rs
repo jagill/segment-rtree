@@ -1,4 +1,4 @@
-use crate::utils::calculate_level_indices;
+use crate::utils::{calculate_level_indices, copy_into_slice};
 use crate::{Coordinate, HasEnvelope, Rectangle};
 
 #[allow(dead_code)]
@@ -68,7 +68,7 @@ impl SegRTree {
         let tree_size = level_indices[level_indices.len() - 1] + 1;
         let empty_rect = Rectangle::new_empty();
         let mut tree = vec![empty_rect; tree_size];
-        copy_into_tree(&mut tree, 0, rects);
+        copy_into_slice(&mut tree, 0, rects);
 
         for level in 1..level_indices.len() {
             let level_index = level_indices[level];
@@ -77,7 +77,7 @@ impl SegRTree {
                 .chunks(degree)
                 .map(|items| Rectangle::of(items))
                 .collect();
-            copy_into_tree(&mut tree, level_index, &next_items);
+            copy_into_slice(&mut tree, level_index, &next_items);
         }
 
         tree.shrink_to_fit();
@@ -247,12 +247,6 @@ impl SegRTree {
     pub(crate) fn root(&self) -> (usize, usize) {
         (self.height(), 0)
     }
-}
-
-fn copy_into_tree(tree: &mut [Rectangle], index: usize, rects: &[Rectangle]) {
-    let (_, subtree) = tree.split_at_mut(index);
-    let (subtree, _) = subtree.split_at_mut(rects.len());
-    subtree.copy_from_slice(rects);
 }
 
 #[cfg(test)]
