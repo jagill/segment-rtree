@@ -1,18 +1,63 @@
 use super::min_heap::MinHeap;
 use crate::geometry_state::{HasRTree, Validated};
-use crate::utils::copy_into_slice;
-use crate::LineString;
-use crate::SegRTree;
-use crate::SegmentUnion;
-use crate::{Coordinate, Rectangle};
+use crate::{Coordinate, LineString, Rectangle, SegRTree, SegmentUnion};
 
 type Heap = MinHeap<(usize, usize)>;
+
+struct SectionBuilder {
+    coordinates: Vec<Coordinate>,
+    indices: Vec<usize>,
+}
+
+impl SectionBuilder {
+    pub fn with_capacity(capacity: usize) -> Self {
+        SectionBuilder {
+            coordinates: Vec::with_capacity(capacity),
+            indices: Vec::with_capacity(16),
+        }
+    }
+
+    pub fn push(&mut self, coord: Coordinate) {
+        self.coordinates.push(coord);
+    }
+
+    pub fn extend(&mut self, coords: &[Coordinate]) {
+        self.coordinates.extend_from_slice(coords);
+    }
+
+    pub fn flush(&mut self) {
+        self.indices.push(self.coordinates.len());
+    }
+
+    /// Flush if there's unflushed coordinates
+    fn maybe_flush(&mut self) {
+        let num_coords = self.coordinates.len();
+        if num_coords > 0 {
+            match self.indices.last() {
+                Some(i) if *i == num_coords => (),
+                _ => self.flush(),
+            }
+        }
+    }
+
+    pub fn to_vec(mut self) -> Vec<Vec<Coordinate>> {
+        self.maybe_flush();
+        let mut results = Vec::with_capacity(self.indices.len());
+
+        let mut remaining;
+        for range in self.indices.windows(2) {
+            remaining = self.coordinates.split_off(range[1] - range[0]);
+            results.push(self.coordinates);
+            self.coordinates = remaining;
+        }
+        results
+    }
+}
 
 struct Clipper<'a> {
     clip_rect: Rectangle,
     coords: &'a [Coordinate],
     rtree: &'a SegRTree,
-    output: Vec<Vec<Coordinate>>,
     last_index: Option<usize>,
 }
 
@@ -22,31 +67,18 @@ impl<'a> Clipper<'a> {
             clip_rect,
             coords: path.coords(),
             rtree: path.rtree(),
-            output: Vec::new(),
             last_index: None,
         }
     }
 
     pub fn clip(mut self) -> Vec<Vec<Coordinate>> {
         let (contained, intersects) = self.find_relevant_segments();
-        self.build_output(contained, intersects);
-
-        // Check if we have a loop that starts and ends in the rectangle, but
-        // was clipped into two pieces
-        if self.output.len() > 1
-            && self.output.first().and_then(|ls| ls.first())
-                == self.output.last().and_then(|ls| ls.last())
-        {
-            let mut last_piece = self.output.pop().unwrap();
-            last_piece.pop();
-            last_piece.extend_from_slice(self.output.first().unwrap());
-            self.output.push(last_piece);
-            self.output.swap_remove(0);
-        }
-        self.output
+        let mut output = self.build_output(contained, intersects).to_vec();
+        self.reconnect_loop(&mut output);
+        output
     }
 
-    fn find_relevant_segments(&mut self) -> (SegmentUnion, Heap) {
+    fn find_relevant_segments(&self) -> (SegmentUnion, Heap) {
         let mut contained = SegmentUnion::new();
         let mut intersects = Heap::new();
         let degree = self.rtree.degree();
@@ -74,50 +106,55 @@ impl<'a> Clipper<'a> {
         (contained, intersects)
     }
 
-    fn build_output(&mut self, mut contained: SegmentUnion, mut intersects: Heap) {
-        // TODO: Pre-allocate a vector, and memcpy into it.
-        let mut out_coords = Vec::<Coordinate>::new();
+    fn build_output(
+        &mut self,
+        mut contained: SegmentUnion,
+        mut intersects: Heap,
+    ) -> SectionBuilder {
+        let mut sections = SectionBuilder::with_capacity(contained.len() + 2 * intersects.len());
+
         while !(contained.is_empty() || intersects.is_empty()) {
             if contained.peek().unwrap() < intersects.peek().unwrap().0 {
-                self.push_contained(&mut contained, &mut out_coords);
+                self.push_contained(&mut contained, &mut sections);
             } else {
-                self.push_intersects(&mut intersects, &mut out_coords);
+                self.push_intersects(&mut intersects, &mut sections);
             }
         }
 
         while !(contained.is_empty()) {
-            self.push_contained(&mut contained, &mut out_coords);
+            self.push_contained(&mut contained, &mut sections);
         }
 
         while !(intersects.is_empty()) {
-            self.push_intersects(&mut intersects, &mut out_coords);
+            self.push_intersects(&mut intersects, &mut sections);
         }
 
-        self.flush_output(&mut out_coords);
+        sections.flush();
+        sections
     }
 
-    fn push_contained(&mut self, contained: &mut SegmentUnion, out_coords: &mut Vec<Coordinate>) {
+    fn push_contained(&mut self, contained: &mut SegmentUnion, sections: &mut SectionBuilder) {
         let (mut low, high) = contained.pop().unwrap();
         if Some(low) == self.last_index {
             low += 1;
         } else {
-            self.flush_output(out_coords);
+            sections.flush();
         }
-        out_coords.extend(&self.coords[low..=high]);
+        sections.extend(&self.coords[low..=high]);
         self.last_index = Some(high);
     }
 
-    fn push_intersects(&mut self, intersects: &mut Heap, out_coords: &mut Vec<Coordinate>) {
+    fn push_intersects(&mut self, intersects: &mut Heap, sections: &mut SectionBuilder) {
         let (low, high) = intersects.pop().unwrap();
         let seg_start = self.coords[low];
         let seg_end = self.coords[high];
         if let Some((isxn_start, isxn_end)) = self.clip_rect.intersect_segment(seg_start, seg_end) {
             if Some(low) != self.last_index {
-                self.flush_output(out_coords);
-                out_coords.push(isxn_start);
+                sections.flush();
+                sections.push(isxn_start);
             }
             if isxn_end != isxn_start {
-                out_coords.push(isxn_end);
+                sections.push(isxn_end);
             }
             if isxn_end == seg_end {
                 self.last_index = Some(high);
@@ -125,10 +162,17 @@ impl<'a> Clipper<'a> {
         }
     }
 
-    fn flush_output(&mut self, out_coords: &mut Vec<Coordinate>) {
-        if !out_coords.is_empty() {
-            self.output.push(out_coords.clone());
-            out_coords.clear();
+    fn reconnect_loop(&self, output: &mut Vec<Vec<Coordinate>>) {
+        // Check if we have a loop that starts and ends in the rectangle, but
+        // was clipped into two pieces
+        if output.len() > 1
+            && output.first().and_then(|ls| ls.first()) == output.last().and_then(|ls| ls.last())
+        {
+            let mut last_piece = output.pop().unwrap();
+            last_piece.pop();
+            last_piece.extend_from_slice(output.first().unwrap());
+            output.push(last_piece);
+            output.swap_remove(0);
         }
     }
 }
@@ -151,7 +195,10 @@ mod tests {
     fn assert_clip(rect: Rectangle, input: Vec<(f64, f64)>, output: Vec<Vec<(f64, f64)>>) {
         let input = floats_to_coords(input);
         let output: Vec<Vec<Coordinate>> = output.into_iter().map(floats_to_coords).collect();
-        assert_eq!(clip_path(rect, &LineString::try_from(input).unwrap()), output);
+        assert_eq!(
+            clip_path(rect, &LineString::try_from(input).unwrap()),
+            output
+        );
     }
 
     #[test]

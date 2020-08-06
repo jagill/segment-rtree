@@ -36,11 +36,17 @@ impl SegmentUnion {
         Some(ret)
     }
 
+    /// Pop two elements, as a low-high pair.
     pub fn pop(&mut self) -> Option<(usize, usize)> {
         Some((self._pop()?, self._pop()?))
     }
 
     pub fn is_empty(&self) -> bool {
         self.set.is_empty()
+    }
+
+    /// Number of contained indicies.  This is twice the number of low-high pairs.
+    pub fn len(&self) -> usize {
+        self.set.len()
     }
 }

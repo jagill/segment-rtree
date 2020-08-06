@@ -27,4 +27,8 @@ impl<T: Ord + Copy> MinHeap<T> {
     pub fn is_empty(&self) -> bool {
         self.max_heap.is_empty()
     }
+
+    pub fn len(&self) -> usize {
+        self.max_heap.len()
+    }
 }
