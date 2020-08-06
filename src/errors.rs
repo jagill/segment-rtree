@@ -3,6 +3,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
 pub enum ValidationError {
+    #[error("Coordinate has a non-finite component")]
+    NonFiniteCoordinate,
+
     #[error("Path has only 1 coordinate")]
     SinglePathCoordinate,
 

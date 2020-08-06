@@ -60,6 +60,9 @@ impl LineString<Prepared> {
                     position: range[0],
                 });
             }
+            if !range[1].is_finite() || (index == 0 && !range[0].is_finite()) {
+                return Err(ValidationError::NonFiniteCoordinate);
+            }
         }
 
         for (index_a, index_b) in self.rtree().query_self_intersections() {

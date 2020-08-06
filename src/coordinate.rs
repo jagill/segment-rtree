@@ -36,6 +36,10 @@ impl Coordinate {
     pub fn dot(&self, rhs: Coordinate) -> f64 {
         self.x * rhs.x + self.y * rhs.y
     }
+
+    pub fn is_finite(&self) -> bool {
+        self.x.is_finite() && self.y.is_finite()
+    }
 }
 
 impl Add for Coordinate {
