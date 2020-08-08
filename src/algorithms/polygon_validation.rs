@@ -3,15 +3,16 @@ use crate::errors::ValidationError;
 use crate::errors::ValidationError::*;
 use crate::geometry_state::{HasRTree, Validated};
 use crate::utils::intersect_segments;
-use crate::{Coordinate, HasEnvelope, LinearRing, Polygon};
+use crate::{Coordinate, HasEnvelope, LinearRing};
 use std::collections::{HashMap, HashSet};
 
 type Intersections = HashSet<(usize, usize)>;
 
 /// Validate a polygon, on the assumption its component paths are valid.
-pub fn validate_polygon(polygon: &Polygon) -> Result<(), ValidationError> {
-    let shell = polygon.shell();
-    let holes = polygon.holes();
+pub fn validate_polygon(
+    shell: &LinearRing<Validated>,
+    holes: &[LinearRing<Validated>],
+) -> Result<(), ValidationError> {
     let mut intersections: Intersections = Intersections::new();
     for (i, hole) in holes.iter().enumerate() {
         if hole.coords().first() != hole.coords().last() {
