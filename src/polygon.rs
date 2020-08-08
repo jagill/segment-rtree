@@ -40,6 +40,15 @@ impl Polygon<Prepared> {
         let try_holes: Result<Vec<_>, _> =
             self.holes.into_iter().map(|hole| hole.validate()).collect();
         let holes = try_holes?;
+        Polygon::try_new(shell, holes)
+    }
+}
+
+impl Polygon<Validated> {
+    pub fn try_new(
+        shell: LinearRing<Validated>,
+        holes: Vec<LinearRing<Validated>>,
+    ) -> Result<Self, ValidationError> {
         validate_polygon(&shell, &holes)?;
         Ok(Polygon { shell, holes })
     }

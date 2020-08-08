@@ -40,6 +40,13 @@ impl Coordinate {
     pub fn is_finite(&self) -> bool {
         self.x.is_finite() && self.y.is_finite()
     }
+
+    pub fn vec_from<C>(cs: &[C]) -> Vec<Coordinate>
+    where
+        C: Into<Coordinate> + Copy,
+    {
+        cs.into_iter().map(|&c| c.into()).collect()
+    }
 }
 
 impl Add for Coordinate {

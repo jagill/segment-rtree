@@ -165,14 +165,34 @@ impl Rectangle {
     }
 }
 
-enum Side {
-    Left,
-    Right,
+// NB: The order of the sides is important for the clipping algorithms
+#[derive(Copy, Clone, Debug, PartialOrd, PartialEq, Eq, Ord)]
+pub enum Side {
     Top,
+    Right,
     Bottom,
+    Left,
 }
 
-static SIDES: [Side; 4] = [Left, Right, Top, Bottom];
+impl Side {
+    /// Find the side of a rect a coordinate is on.  If it is on a corner,
+    /// choose the side first in order.
+    pub fn find_side(coord: Coordinate, rectangle: Rectangle) -> Option<Side> {
+        if coord.y == rectangle.y_max {
+            Some(Top)
+        } else if coord.x == rectangle.x_max {
+            Some(Right)
+        } else if coord.y == rectangle.y_min {
+            Some(Bottom)
+        } else if coord.x == rectangle.x_min {
+            Some(Left)
+        } else {
+            None
+        }
+    }
+}
+
+static SIDES: [Side; 4] = [Top, Right, Bottom, Left];
 
 #[cfg(test)]
 mod tests {
