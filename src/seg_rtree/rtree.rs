@@ -1,8 +1,7 @@
 use crate::utils::{calculate_level_indices, copy_into_slice};
 use crate::{Coordinate, HasEnvelope, Rectangle};
 
-#[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SegRTree {
     degree: usize,
     max_size: usize,

@@ -5,7 +5,7 @@ use crate::utils::{intersect_segments, rectangles_from_coordinates};
 use crate::Coordinate;
 use std::convert::TryFrom;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LineString<S> {
     pub(crate) coords: Vec<Coordinate>,
     pub(crate) state: S,

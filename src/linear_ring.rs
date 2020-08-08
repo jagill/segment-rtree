@@ -3,6 +3,7 @@ use crate::geometry_state::{HasRTree, Prepared, Raw, Validated};
 use crate::{Coordinate, LineString, SegRTree};
 use std::convert::TryFrom;
 
+#[derive(Debug, Clone)]
 pub struct LinearRing<S> {
     coords: Vec<Coordinate>,
     state: S,

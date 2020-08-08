@@ -1,14 +1,14 @@
 use crate::{HasEnvelope, Rectangle, SegRTree};
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Raw;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Prepared {
     pub(crate) rtree: SegRTree,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Validated {
     pub(crate) rtree: SegRTree,
 }
