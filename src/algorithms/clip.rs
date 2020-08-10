@@ -1,5 +1,5 @@
 use super::min_heap::MinHeap;
-use crate::geometry_state::{HasRTree, Validated};
+use crate::geometry_state::{HasRTree, Raw, Validated};
 use crate::{Coordinate, LineString, Rectangle, SegRTree, SegmentUnion};
 
 type Heap = MinHeap<(usize, usize)>;
@@ -54,7 +54,7 @@ impl SectionBuilder {
     }
 }
 
-struct Clipper<'a> {
+pub(crate) struct Clipper<'a> {
     clip_rect: Rectangle,
     coords: &'a [Coordinate],
     rtree: &'a SegRTree,
@@ -62,11 +62,11 @@ struct Clipper<'a> {
 }
 
 impl<'a> Clipper<'a> {
-    pub fn new(clip_rect: Rectangle, path: &'a LineString<Validated>) -> Self {
+    pub fn new(clip_rect: Rectangle, coords: &'a Vec<Coordinate>, rtree: &'a SegRTree) -> Self {
         Clipper {
             clip_rect,
-            coords: path.coords(),
-            rtree: path.rtree(),
+            coords,
+            rtree,
             last_index: None,
         }
     }
@@ -178,9 +178,13 @@ impl<'a> Clipper<'a> {
 }
 
 /// Clip a path by intersecting with a rectangle
-pub fn clip_path(clip_rect: Rectangle, path: &LineString<Validated>) -> Vec<Vec<Coordinate>> {
-    let clipper = Clipper::new(clip_rect, path);
-    clipper.clip()
+pub fn clip_path(clip_rect: Rectangle, path: &LineString<Validated>) -> Vec<LineString<Raw>> {
+    let clipper = Clipper::new(clip_rect, path.coords(), path.rtree());
+    clipper
+        .clip()
+        .into_iter()
+        .map(|coords| LineString::new(coords))
+        .collect()
 }
 
 #[cfg(test)]
@@ -194,11 +198,14 @@ mod tests {
 
     fn assert_clip(rect: Rectangle, input: Vec<(f64, f64)>, output: Vec<Vec<(f64, f64)>>) {
         let input = floats_to_coords(input);
-        let output: Vec<Vec<Coordinate>> = output.into_iter().map(floats_to_coords).collect();
-        assert_eq!(
-            clip_path(rect, &LineString::try_from(input).unwrap()),
-            output
-        );
+        let expected: Vec<Vec<Coordinate>> = output.into_iter().map(floats_to_coords).collect();
+        let line_strings = clip_path(rect, &LineString::try_from(input).unwrap());
+        let result: Vec<Vec<Coordinate>> = line_strings
+            .iter()
+            .map(LineString::coords)
+            .map(|c| c.clone())
+            .collect();
+        assert_eq!(result, expected);
     }
 
     #[test]
