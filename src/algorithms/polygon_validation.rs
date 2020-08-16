@@ -1,4 +1,4 @@
-use super::point_in_polygon::point_in_polygon;
+use super::point_in_polygon::point_in_loop;
 use crate::errors::ValidationError;
 use crate::errors::ValidationError::*;
 use crate::geometry_state::{HasRTree, Validated};
@@ -24,7 +24,7 @@ pub fn validate_polygon(
             intersections.insert((0, i + 1));
         }
 
-        if !point_in_polygon(find_nonequal_point(hole.coords(), intersection), shell)? {
+        if !point_in_loop(find_nonequal_point(hole.coords(), intersection), shell) {
             return Err(HoleNotValid);
         }
 
@@ -40,10 +40,10 @@ pub fn validate_polygon(
                 intersections.insert((i + 1, j + 1));
             }
             // Check that each hole is not in the other
-            if point_in_polygon(find_nonequal_point(hole.coords(), intersection), other_hole)? {
+            if point_in_loop(find_nonequal_point(hole.coords(), intersection), other_hole) {
                 return Err(HoleNotValid);
             }
-            if point_in_polygon(find_nonequal_point(other_hole.coords(), intersection), hole)? {
+            if point_in_loop(find_nonequal_point(other_hole.coords(), intersection), hole) {
                 return Err(HoleNotValid);
             }
         }

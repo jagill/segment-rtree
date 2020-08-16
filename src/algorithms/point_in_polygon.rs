@@ -1,12 +1,8 @@
-use crate::errors::ValidationError;
 use crate::geometry_state::{HasRTree, Validated};
 use crate::utils::winding_number;
 use crate::{Coordinate, LinearRing, Rectangle};
 
-pub fn point_in_polygon(
-    point: Coordinate,
-    path: &LinearRing<Validated>,
-) -> Result<bool, ValidationError> {
+pub fn point_in_loop(point: Coordinate, path: &LinearRing<Validated>) -> bool {
     let coords = path.coords();
     let rtree = path.rtree();
 
@@ -36,9 +32,10 @@ pub fn point_in_polygon(
             }
         }
     }
-    Ok(wn != 0)
+    wn != 0
 }
 
+// Check if a point is in the rectangle, or to its left
 fn check_point_rect(point: Coordinate, rect: Rectangle) -> bool {
     point.x <= rect.x_max && point.y >= rect.y_min && point.y <= rect.y_max
 }
@@ -52,10 +49,10 @@ mod tests {
     fn check_containment() {
         let loop_a =
             LinearRing::try_from(vec![(0., 0.), (0., 1.), (1., 1.), (1., 0.), (0., 0.)]).unwrap();
-        assert!(point_in_polygon((0.5, 0.5).into(), &loop_a).unwrap());
-        assert!(point_in_polygon((0.0, 0.0).into(), &loop_a).unwrap());
-        assert!(point_in_polygon((0.5, 0.0).into(), &loop_a).unwrap());
-        assert!(point_in_polygon((0.0, 0.5).into(), &loop_a).unwrap());
-        assert!(!point_in_polygon((1.1, 0.0).into(), &loop_a).unwrap());
+        assert!(point_in_loop((0.5, 0.5).into(), &loop_a));
+        assert!(point_in_loop((0.0, 0.0).into(), &loop_a));
+        assert!(point_in_loop((0.5, 0.0).into(), &loop_a));
+        assert!(point_in_loop((0.0, 0.5).into(), &loop_a));
+        assert!(!point_in_loop((1.1, 0.0).into(), &loop_a));
     }
 }
