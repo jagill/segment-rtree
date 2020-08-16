@@ -206,7 +206,7 @@ impl SegRTree {
 
         while let Some((level_a, offset_a, level_b, offset_b)) = stack.pop() {
             let rect_a = self.get_rectangle(level_a, offset_a);
-            let rect_b = self.get_rectangle(level_b, offset_b);
+            let rect_b = other.get_rectangle(level_b, offset_b);
             if !rect_a.intersects(rect_b) {
                 continue;
             }
@@ -221,8 +221,8 @@ impl SegRTree {
                 }
             } else {
                 let child_level = level_b - 1;
-                let first_child_offset = self.degree * offset_b;
-                let last_child_offset = first_child_offset + self.degree;
+                let first_child_offset = other.degree * offset_b;
+                let last_child_offset = first_child_offset + other.degree;
                 for child_offset in first_child_offset..last_child_offset {
                     stack.push((level_a, offset_a, child_level, child_offset));
                 }

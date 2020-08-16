@@ -15,9 +15,6 @@ pub fn validate_polygon(
 ) -> Result<(), ValidationError> {
     let mut intersections: Intersections = Intersections::new();
     for (i, hole) in holes.iter().enumerate() {
-        if hole.coords().first() != hole.coords().last() {
-            return Err(NotARing);
-        }
         if shell.envelope() == hole.envelope() || !shell.envelope().contains(hole.envelope()) {
             return Err(HoleNotValid);
         }
@@ -87,7 +84,8 @@ fn find_intersecting_point(
         }
         match final_intersection {
             None => final_intersection = Some(isxn_start),
-            Some(_) => return Err(MultipleIntersections),
+            Some(c) if c == isxn_start => (),
+            _ => return Err(MultipleIntersections),
         }
     }
     Ok(final_intersection)
