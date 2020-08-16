@@ -1,7 +1,8 @@
 use crate::algorithms::validate_polygon;
 use crate::errors::ValidationError;
-use crate::geometry_state::{Prepared, Raw, Validated};
+use crate::geometry_state::{HasRTree, Prepared, Raw, Validated};
 use crate::LinearRing;
+use crate::{HasEnvelope, Rectangle};
 
 pub struct Polygon<S> {
     shell: LinearRing<S>,
@@ -15,6 +16,12 @@ impl<S> Polygon<S> {
 
     pub fn holes(&self) -> &[LinearRing<S>] {
         &self.holes
+    }
+}
+
+impl<S: HasRTree> HasEnvelope for Polygon<S> {
+    fn envelope(&self) -> Rectangle {
+        self.shell().envelope()
     }
 }
 

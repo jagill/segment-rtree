@@ -25,23 +25,38 @@ pub(crate) fn calculate_level_indices(degree: usize, num_items: usize) -> Vec<us
     level_indices
 }
 
-pub(crate) fn winding_number(point: Coordinate, start: Coordinate, end: Coordinate) -> i32 {
+pub(crate) enum WindingPosition {
+    Right,
+    Off,
+    Left,
+    On,
+}
+
+pub(crate) fn winding_number(
+    point: Coordinate,
+    start: Coordinate,
+    end: Coordinate,
+) -> WindingPosition {
     // Calculate the two halves of the cross-product (= lx - rx)
     let lx = (end.x - start.x) * (point.y - start.y);
     let rx = (end.y - start.y) * (point.x - start.x);
 
+    if lx == rx {
+        return WindingPosition::On;
+    }
+
     if start.y <= point.y {
         // Upward crossing
         if end.y > point.y && lx > rx {
-            return 1;
+            return WindingPosition::Left;
         }
     } else {
         // Downward crossing
         if end.y <= point.y && lx < rx {
-            return -1;
+            return WindingPosition::Right;
         }
     }
-    0
+    WindingPosition::Off
 }
 
 pub(crate) fn copy_into_slice<T: Copy>(tree: &mut [T], index: usize, items: &[T]) {
